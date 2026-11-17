@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Motion Association Lab | Where identity breaks</title><link rel="stylesheet" href="style.css">
+<script defer src="app.js"></script></head><body>
+<header><span class="eyebrow">RESEARCH WORKBENCH / 02</span><a href="https://github.com/BLANK-2340/motion-association-lab">Source, tests &amp; protocol ↗</a></header>
+<h1>Where does<br><em>identity break?</em></h1>
+<p class="intro">Two identical objects. One crossing. Follow the moment a tracker loses who is who.</p>
+<p class="notice">Interactive replay of <strong>saved CPU results</strong>, not live inference. Every frame and metric is reproducibly computed by the original Python implementation. No uploads, APIs or pretrained models.</p>
+<main><aside><h2>Inspect the sequence</h2>
+<label for="case">Controlled sequence</label><select id="case" disabled><option>Loading evidence…</option></select>
+<label for="frame">Frame <output id="number">0 / 39</output></label><input id="frame" type="range" min="0" max="39" value="0" disabled>
+<div class="buttons"><button id="play" disabled>Play</button><button id="reset" disabled>Reset</button></div>
+<label class="check"><input id="truth" type="checkbox" checked> Ground-truth outlines</label>
+<p id="status" role="status">Loading verified-format evidence…</p>
+<p class="small">Gray: detector foreground mask. Colored dots and labels: observed track IDs. Dashed outline: occluded ground truth. Trails: last eight observed positions, not predicted detections.</p>
+</aside><section class="views" aria-label="Tracking comparison">
+<article><span class="eyebrow">01 / POSITION ONLY</span><h2>Last-position association</h2><canvas id="last" width="800" height="512" role="img" aria-label="Last-position tracking foreground and identities"></canvas><p id="metric0" class="metric"></p></article>
+<article><span class="eyebrow">02 / MOTION PRIOR</span><h2>Constant-velocity association</h2><canvas id="velocity" width="800" height="512" role="img" aria-label="Velocity tracking foreground and identities"></canvas><p id="metric1" class="metric"></p></article>
+</section></main>
+<section class="explanation"><h2>Read the failure, not just the score.</h2><p>The detector thresholds grayscale images and finds 4-connected components. A bounded exact solver maximizes gated one-to-one matches, then minimizes squared centroid distance. The motion variant predicts with the last observed velocity; the ablation uses the last position. Tracks survive up to three missed frames. Ground truth never enters either tracker.</p>
+<p>Velocity preserves identity through the original three-frame occlusion. But merged components corrupt the centroid observations: both methods switch identities in the original crossing. Recall alone hides this failure. Counts below each view describe the <strong>whole sequence</strong>, not the selected frame.</p>
+<h2>Controlled sensitivity study</h2><p id="study">Loading study summary…</p><p>Fixed 24-cell sweep: speed 1/2 pixels per frame, vertical separation 0/2/8 pixels, disappearance 0/1/3/5 frames. No random sampling, tuning or statistical-significance claim. <a href="https://github.com/BLANK-2340/motion-association-lab/blob/main/RESULTS.md">Read the full protocol, counts and limitations ↗</a></p>
+<p class="small">Scope: original tiny synthetic shapes only. Not real-video tracking, official MOTChallenge/IDF1/HOTA metrics, a neural model or evidence of generalization. No GPU performance claim. Foreground-mask display omits subthreshold background noise. MIT licensed original code and data.</p></section>
+<footer>Original implementation · Dependency-free CPU reference · Reproducible evidence</footer>
+</body></html>

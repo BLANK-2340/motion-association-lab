@@ -1,0 +1,20 @@
+const {test}=require('node:test');const assert=require('node:assert/strict');const fs=require('node:fs');
+const {validate}=require('../docs/app.js');const evidence=JSON.parse(fs.readFileSync('docs/evidence.json','utf8'));
+test('all saved sequences have valid coordinates and conserved counts',()=>{assert.equal(validate(evidence),evidence);for(const c of evidence.cases)for(let v=0;v<2;v++){const n=c.frames.reduce((s,f)=>s+f.tracks[v].length,0);assert.equal(n,c.metrics[v].matches+c.metrics[v].false_positives);}});
+test('reject corrupted schema, counts and coordinates',()=>{for(const mutate of [d=>d.schema=2,d=>d.cases.pop(),d=>d.cases[0].metrics[0].matches=81,d=>d.cases[0].frames[0].foreground[0]=[100,0]]){const d=structuredClone(evidence);mutate(d);assert.throws(()=>validate(d));}});
+test('known original occlusion diagnostic and frame evidence',()=>{const c=evidence.cases.find(c=>c.seed===101&&c.scenario==='occlusion');assert.equal(c.metrics[0].identity_switches,2);assert.equal(c.metrics[1].identity_switches,0);assert.deepEqual(c.frames[19].hidden,[1]);assert.equal(c.frames[19].detections.length,1);});
+test('viewer loads, scrubs, changes case, toggles truth, plays and resets',async()=>{
+  const vm=require('node:vm');const elements={};let tick;
+  const ctx=new Proxy({}, {get:()=>()=>{}});
+  for(const id of ['case','frame','number','status','last','velocity','metric0','metric1','play','reset','truth','study'])elements[id]={value:'0',checked:true,disabled:true,textContent:'',listeners:{},getContext:()=>ctx,addEventListener(name,fn){this.listeners[name]=fn;},replaceChildren(){}};
+  const sandbox={document:{getElementById:id=>elements[id],createElement:()=>({})},fetch:async()=>({ok:true,json:async()=>structuredClone(evidence)}),setInterval:fn=>{tick=fn;return 1;},clearInterval:()=>{tick=null;},console};
+  vm.runInNewContext(fs.readFileSync('docs/app.js','utf8'),sandbox);
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(elements.play.disabled,false);assert.match(elements.metric1.textContent,/0 ID switches/);
+  elements.frame.value='19';elements.frame.listeners.input();assert.match(elements.status.textContent,/hidden truth IDs: 1/);
+  elements.truth.checked=false;elements.truth.listeners.change();
+  elements.case.value='0';elements.case.listeners.change();assert.match(elements.metric0.textContent,/80\/80 matches/);assert.equal(+elements.frame.value,0);
+  elements.play.listeners.click();assert.equal(elements.play.textContent,'Pause');tick();assert.equal(+elements.frame.value,1);
+  elements.reset.listeners.click();assert.equal(elements.play.textContent,'Play');assert.equal(+elements.frame.value,0);assert.equal(tick,null);
+  assert.match(elements.study.textContent,/21 total identity switches.*24 for velocity/);
+});
